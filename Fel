@@ -1,0 +1,126 @@
+import pygame
+import random
+import sys
+
+# Initialize pygame
+pygame.init()
+
+# Screen dimensions
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Coin Collector")
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
+
+# Player
+player_size = 30
+player_x = WIDTH // 2
+player_y = HEIGHT // 2
+player_speed = 5
+
+# Coins
+coin_size = 20
+coins = []
+for _ in range(10):
+    coins.append([
+        random.randint(0, WIDTH - coin_size),
+        random.randint(0, HEIGHT - coin_size)
+    ])
+
+# Enemies
+enemy_size = 25
+enemies = []
+for _ in range(5):
+    enemies.append([
+        random.randint(0, WIDTH - enemy_size),
+        random.randint(0, HEIGHT - enemy_size),
+        random.choice([-3, -2, 2, 3]),  # x speed
+        random.choice([-3, -2, 2, 3])   # y speed
+    ])
+
+# Score
+score = 0
+font = pygame.font.SysFont(None, 36)
+
+# Game loop
+clock = pygame.time.Clock()
+running = True
+
+while running:
+    # Handle events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+    
+    # Player movement
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT] and player_x > 0:
+        player_x -= player_speed
+    if keys[pygame.K_RIGHT] and player_x < WIDTH - player_size:
+        player_x += player_speed
+    if keys[pygame.K_UP] and player_y > 0:
+        player_y -= player_speed
+    if keys[pygame.K_DOWN] and player_y < HEIGHT - player_size:
+        player_y += player_speed
+    
+    # Enemy movement
+    for enemy in enemies:
+        enemy[0] += enemy[2]
+        enemy[1] += enemy[3]
+        
+        # Bounce off walls
+        if enemy[0] <= 0 or enemy[0] >= WIDTH - enemy_size:
+            enemy[2] *= -1
+        if enemy[1] <= 0 or enemy[1] >= HEIGHT - enemy_size:
+            enemy[3] *= -1
+    
+    # Collect coins
+    player_rect = pygame.Rect(player_x, player_y, player_size, player_size)
+    for coin in coins[:]:
+        coin_rect = pygame.Rect(coin[0], coin[1], coin_size, coin_size)
+        if player_rect.colliderect(coin_rect):
+            coins.remove(coin)
+            score += 10
+            # Add new coin
+            coins.append([
+                random.randint(0, WIDTH - coin_size),
+                random.randint(0, HEIGHT - coin_size)
+            ])
+    
+    # Check for enemy collision
+    for enemy in enemies:
+        enemy_rect = pygame.Rect(enemy[0], enemy[1], enemy_size, enemy_size)
+        if player_rect.colliderect(enemy_rect):
+            running = False
+    
+    # Draw everything
+    screen.fill(BLACK)
+    
+    # Draw player
+    pygame.draw.rect(screen, BLUE, (player_x, player_y, player_size, player_size))
+    
+    # Draw coins
+    for coin in coins:
+        pygame.draw.circle(screen, YELLOW, (coin[0] + coin_size//2, coin[1] + coin_size//2), coin_size//2)
+    
+    # Draw enemies
+    for enemy in enemies:
+        pygame.draw.rect(screen, RED, (enemy[0], enemy[1], enemy_size, enemy_size))
+    
+    # Draw score
+    score_text = font.render(f"Score: {score}", True, WHITE)
+    screen.blit(score_text, (10, 10))
+    
+    # Update display
+    pygame.display.flip()
+    clock.tick(60)
+
+# Game over
+pygame.quit()
+sys.exit()
